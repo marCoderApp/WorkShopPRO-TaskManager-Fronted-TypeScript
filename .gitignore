@@ -1,0 +1,23 @@
+# Dependencias
+node_modules/
+
+# Logs y errores
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Entorno (Aquí van tus variables de API_URL, tokens, etc.)
+.env
+.env.local
+.env.*.local
+
+# Archivos de build (Lo que genera Vite al compilar para producción)
+dist/
+dist-ssr/
+
+# IDEs y otros
+.vscode/
+.idea/
+.DS_Store
+*.tsbuildinfo
