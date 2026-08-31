@@ -3,120 +3,126 @@ import { Login } from "./components/Login";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { TechnicianDashboard } from "./components/TechnicianDashboard";
 
-type TaskStatus = "pending" | "in_progress" | "completed" | "blocked";
-type Priority = "low" | "medium" | "high" | "critical";
+export type TaskStatus = "pendiente" | "en_progreso" | "completada" | "bloqueada";
+export type Priority = "baja" | "media" | "alta" | "critica";
+export type UserRole = "superadmin" | "admin" | "tecnico";
 
-interface User {
+export interface AppUser {
   id: string;
-  name: string;
-  role: "admin" | "technician";
+  nombre: string;
+  rol: UserRole;
   email: string;
   password: string;
   avatar: string;
+  activo: boolean;
 }
 
-interface Task {
+export interface Task {
   id: string;
-  title: string;
-  description: string;
-  location: string;
-  priority: Priority;
-  status: TaskStatus;
-  assigneeId: string;
-  assigneeName: string;
-  createdAt: string;
-  dueDate: string;
-  category: string;
+  titulo: string;
+  descripcion: string;
+  ubicacion: string;
+  prioridad: Priority;
+  estado: TaskStatus;
+  asignadoAId: string;
+  asignadoANombre: string;
+  creadoEn: string;
+  fechaVencimiento: string;
+  categoria: string;
+  notificada?: boolean;
+  notificadaPor?: string;
+  notificadaEn?: string;
 }
 
-const USERS: User[] = [
-  { id: "admin-1", name: "Carlos Rivera", role: "admin", email: "admin@fieldops.com", password: "admin123", avatar: "CR" },
-  { id: "tech-1", name: "James Okafor", role: "technician", email: "james@fieldops.com", password: "tech123", avatar: "JO" },
-  { id: "tech-2", name: "Sofia Martínez", role: "technician", email: "sofia@fieldops.com", password: "tech123", avatar: "SM" },
-  { id: "tech-3", name: "Wei Zhang", role: "technician", email: "wei@fieldops.com", password: "tech123", avatar: "WZ" },
+const INITIAL_USERS: AppUser[] = [
+  { id: "superadmin-1", nombre: "Carlos Rivera", rol: "superadmin", email: "superadmin@fieldops.com", password: "super123", avatar: "CR", activo: true },
+  { id: "admin-1", nombre: "Laura Gómez", rol: "admin", email: "admin@fieldops.com", password: "admin123", avatar: "LG", activo: true },
+  { id: "tech-1", nombre: "James Okafor", rol: "tecnico", email: "james@fieldops.com", password: "tech123", avatar: "JO", activo: true },
+  { id: "tech-2", nombre: "Sofía Martínez", rol: "tecnico", email: "sofia@fieldops.com", password: "tech123", avatar: "SM", activo: true },
+  { id: "tech-3", nombre: "Wei Zhang", rol: "tecnico", email: "wei@fieldops.com", password: "tech123", avatar: "WZ", activo: true },
 ];
 
 const INITIAL_TASKS: Task[] = [
   {
-    id: "t1", title: "Replace HVAC filter — Unit B3",
-    description: "The HVAC unit on the 3rd floor of Building B requires a quarterly filter replacement. Use MERV-13 filters from stockroom shelf 4. Inspect blower motor and report any unusual noise.",
-    location: "Building B, Floor 3", priority: "high", status: "pending",
-    assigneeId: "tech-1", assigneeName: "James Okafor",
-    createdAt: "2026-05-28", dueDate: "2026-06-10", category: "HVAC",
+    id: "t1", titulo: "Reemplazar filtro HVAC — Unidad B3",
+    descripcion: "La unidad HVAC del 3er piso del Edificio B requiere el reemplazo trimestral del filtro. Usar filtros MERV-13 del almacén estante 4. Inspeccionar el motor del ventilador y reportar cualquier ruido inusual.",
+    ubicacion: "Edificio B, Piso 3", prioridad: "alta", estado: "pendiente",
+    asignadoAId: "tech-1", asignadoANombre: "James Okafor",
+    creadoEn: "2026-05-28", fechaVencimiento: "2026-06-10", categoria: "HVAC",
   },
   {
-    id: "t2", title: "Inspect electrical panel — Server Room",
-    description: "Annual inspection of the main electrical panel in the server room. Check breaker integrity, verify grounding, and test surge protection units. Document findings in the maintenance log.",
-    location: "Data Center, Level B1", priority: "critical", status: "in_progress",
-    assigneeId: "tech-1", assigneeName: "James Okafor",
-    createdAt: "2026-06-01", dueDate: "2026-06-08", category: "Electrical",
+    id: "t2", titulo: "Inspeccionar panel eléctrico — Sala de servidores",
+    descripcion: "Inspección anual del panel eléctrico principal en la sala de servidores. Verificar integridad de los disyuntores, conexión a tierra y protectores de sobretensión. Documentar hallazgos en el registro de mantenimiento.",
+    ubicacion: "Centro de Datos, Nivel B1", prioridad: "critica", estado: "en_progreso",
+    asignadoAId: "tech-1", asignadoANombre: "James Okafor",
+    creadoEn: "2026-06-01", fechaVencimiento: "2026-06-08", categoria: "Eléctrico",
   },
   {
-    id: "t3", title: "Fix leaking pipe — Restroom 2F",
-    description: "Report of water dripping under the sink in the women's restroom on the 2nd floor. Likely P-trap seal failure. Replace seal and check all supply line connections.",
-    location: "Building A, Floor 2", priority: "medium", status: "completed",
-    assigneeId: "tech-2", assigneeName: "Sofia Martínez",
-    createdAt: "2026-05-30", dueDate: "2026-06-05", category: "Plumbing",
+    id: "t3", titulo: "Reparar tubería — Baño 2do piso",
+    descripcion: "Reporte de goteo bajo el lavabo del baño de mujeres en el 2do piso. Posible falla en el sello del sifón. Reemplazar sello y verificar todas las conexiones de suministro.",
+    ubicacion: "Edificio A, Piso 2", prioridad: "media", estado: "completada",
+    asignadoAId: "tech-2", asignadoANombre: "Sofía Martínez",
+    creadoEn: "2026-05-30", fechaVencimiento: "2026-06-05", categoria: "Plomería",
   },
   {
-    id: "t4", title: "Network cable routing — Conference Room C",
-    description: "Install 4 ethernet drops in Conference Room C for the new AV setup. Run Cat6a cables from the nearest IDF. Terminate at wall plates and patch panel. Test with Fluke tester.",
-    location: "Building C, Ground Floor", priority: "medium", status: "in_progress",
-    assigneeId: "tech-2", assigneeName: "Sofia Martínez",
-    createdAt: "2026-06-02", dueDate: "2026-06-12", category: "Network",
+    id: "t4", titulo: "Cableado de red — Sala de conferencias C",
+    descripcion: "Instalar 4 puntos de red en la Sala de Conferencias C para el nuevo sistema AV. Tender cables Cat6a desde el IDF más cercano. Terminar en placas de pared y patch panel. Probar con equipo Fluke.",
+    ubicacion: "Edificio C, Planta Baja", prioridad: "media", estado: "en_progreso",
+    asignadoAId: "tech-2", asignadoANombre: "Sofía Martínez",
+    creadoEn: "2026-06-02", fechaVencimiento: "2026-06-12", categoria: "Redes",
   },
   {
-    id: "t5", title: "Safety inspection — Rooftop equipment",
-    description: "Quarterly safety walkthrough of rooftop mechanical equipment. Check all guards, anti-vibration mounts, and weatherproofing seals on all units. Update safety checklist form.",
-    location: "Rooftop, Main Building", priority: "high", status: "pending",
-    assigneeId: "tech-3", assigneeName: "Wei Zhang",
-    createdAt: "2026-06-03", dueDate: "2026-06-15", category: "Safety",
+    id: "t5", titulo: "Inspección de seguridad — Equipos en azotea",
+    descripcion: "Recorrido trimestral de seguridad en los equipos mecánicos de la azotea. Verificar protecciones, soportes antivibratorios y sellos de impermeabilización en todas las unidades. Actualizar lista de verificación de seguridad.",
+    ubicacion: "Azotea, Edificio Principal", prioridad: "alta", estado: "pendiente",
+    asignadoAId: "tech-3", asignadoANombre: "Wei Zhang",
+    creadoEn: "2026-06-03", fechaVencimiento: "2026-06-15", categoria: "Seguridad",
   },
   {
-    id: "t6", title: "Emergency light testing — All floors",
-    description: "Monthly test of all emergency lighting units across floors 1-5. Press test button, record duration, note any units failing to illuminate. Replace batteries in units under 30 min runtime.",
-    location: "All Buildings", priority: "low", status: "pending",
-    assigneeId: "tech-3", assigneeName: "Wei Zhang",
-    createdAt: "2026-06-04", dueDate: "2026-06-20", category: "Safety",
+    id: "t6", titulo: "Prueba de luces de emergencia — Todos los pisos",
+    descripcion: "Prueba mensual de todas las luminarias de emergencia en los pisos 1 al 5. Presionar botón de prueba, registrar duración y reportar unidades que no enciendan. Reemplazar baterías en unidades con autonomía menor a 30 minutos.",
+    ubicacion: "Todos los edificios", prioridad: "baja", estado: "pendiente",
+    asignadoAId: "tech-3", asignadoANombre: "Wei Zhang",
+    creadoEn: "2026-06-04", fechaVencimiento: "2026-06-20", categoria: "Seguridad",
   },
   {
-    id: "t7", title: "Door seal replacement — Cold storage",
-    description: "Cold storage door seals showing wear and causing temperature variance. Replace full door gasket set on both cold storage units. Verify door closes to spec and temperature holds.",
-    location: "Kitchen, Level 1", priority: "critical", status: "blocked",
-    assigneeId: "tech-1", assigneeName: "James Okafor",
-    createdAt: "2026-06-01", dueDate: "2026-06-07", category: "Maintenance",
+    id: "t7", titulo: "Reemplazo de sello — Cámara frigorífica",
+    descripcion: "Los sellos de la puerta de la cámara frigorífica muestran desgaste y están causando variaciones de temperatura. Reemplazar el juego completo de empaques en ambas cámaras. Verificar que la puerta cierre correctamente y la temperatura se mantenga estable.",
+    ubicacion: "Cocina, Nivel 1", prioridad: "critica", estado: "bloqueada",
+    asignadoAId: "tech-1", asignadoANombre: "James Okafor",
+    creadoEn: "2026-06-01", fechaVencimiento: "2026-06-07", categoria: "Mantenimiento",
   },
   {
-    id: "t8", title: "Structural crack assessment — Parking deck",
-    description: "Small cracks observed in the parking deck surface near stairwell B. Assess depth and width, photograph all cracks with reference scale. Flag if structural engineer consultation is needed.",
-    location: "Parking Deck, Level P2", priority: "high", status: "pending",
-    assigneeId: "tech-2", assigneeName: "Sofia Martínez",
-    createdAt: "2026-06-05", dueDate: "2026-06-18", category: "Structural",
+    id: "t8", titulo: "Evaluación de grietas — Deck de estacionamiento",
+    descripcion: "Se observaron grietas en la superficie del deck de estacionamiento cerca de la escalera B. Evaluar profundidad y ancho, fotografiar todas las grietas con escala de referencia. Indicar si se requiere consulta con ingeniero estructural.",
+    ubicacion: "Estacionamiento, Nivel P2", prioridad: "alta", estado: "pendiente",
+    asignadoAId: "tech-2", asignadoANombre: "Sofía Martínez",
+    creadoEn: "2026-06-05", fechaVencimiento: "2026-06-18", categoria: "Estructural",
   },
 ];
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const [users, setUsers] = useState<AppUser[]>(INITIAL_USERS);
   const [darkMode, setDarkMode] = useState(true);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
-  // initialize class on mount
   useEffect(() => {
     document.documentElement.classList.add("dark");
   }, []);
 
-  function handleLogin(user: User) { setCurrentUser(user); }
+  function handleLogin(user: AppUser) { setCurrentUser(user); }
   function handleLogout() { setCurrentUser(null); }
 
-  function handleCreateTask(task: Omit<Task, "id" | "createdAt">) {
+  function handleCreateTask(task: Omit<Task, "id" | "creadoEn">) {
     setTasks((prev) => [{
       ...task,
       id: `t-${Date.now()}`,
-      createdAt: new Date().toISOString().split("T")[0],
+      creadoEn: new Date().toISOString().split("T")[0],
     }, ...prev]);
   }
 
@@ -124,26 +130,44 @@ export default function App() {
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
   }
 
-  function handleUpdateStatus(taskId: string, status: TaskStatus) {
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status } : t)));
+  function handleUpdateStatus(taskId: string, estado: TaskStatus) {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, estado } : t)));
   }
 
-  const technicians = USERS.filter((u) => u.role === "technician").map((u) => ({
-    id: u.id, name: u.name, avatar: u.avatar,
+  function handleNotificarTarea(taskId: string, adminNombre: string) {
+    const ahora = new Date();
+    const fecha = ahora.toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const hora = ahora.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? { ...t, notificada: true, notificadaPor: adminNombre, notificadaEn: `${fecha} ${hora}` }
+          : t
+      )
+    );
+  }
+
+  function handleCreateUser(user: Omit<AppUser, "id" | "activo">) {
+    setUsers((prev) => [...prev, { ...user, id: `u-${Date.now()}`, activo: true }]);
+  }
+
+  function handleDeleteUser(userId: string) {
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+  }
+
+  const tecnicos = users.filter((u) => u.rol === "tecnico" && u.activo).map((u) => ({
+    id: u.id, nombre: u.nombre, avatar: u.avatar,
   }));
 
   if (!currentUser) {
-    return <Login onLogin={handleLogin} users={USERS} darkMode={darkMode} onToggleDark={() => setDarkMode((d) => !d)} />;
+    return <Login onLogin={handleLogin} users={users} darkMode={darkMode} onToggleDark={() => setDarkMode((d) => !d)} />;
   }
 
-  if (currentUser.role === "admin") {
+  if (currentUser.rol === "tecnico") {
     return (
-      <AdminDashboard
+      <TechnicianDashboard
         currentUser={currentUser}
         tasks={tasks}
-        technicians={technicians}
-        onCreateTask={handleCreateTask}
-        onDeleteTask={handleDeleteTask}
         onUpdateStatus={handleUpdateStatus}
         onLogout={handleLogout}
         darkMode={darkMode}
@@ -153,10 +177,17 @@ export default function App() {
   }
 
   return (
-    <TechnicianDashboard
+    <AdminDashboard
       currentUser={currentUser}
       tasks={tasks}
+      users={users}
+      tecnicos={tecnicos}
+      onCreateTask={handleCreateTask}
+      onDeleteTask={handleDeleteTask}
       onUpdateStatus={handleUpdateStatus}
+      onCreateUser={handleCreateUser}
+      onDeleteUser={handleDeleteUser}
+      onNotificarTarea={handleNotificarTarea}
       onLogout={handleLogout}
       darkMode={darkMode}
       onToggleDark={() => setDarkMode((d) => !d)}
