@@ -1,5 +1,6 @@
-import { X, MapPin, Calendar, Tag, User, Clock, CheckCircle2, Loader2, AlertCircle, ChevronDown, BellRing, Bell } from "lucide-react";
+import { X, Calendar, Tag, User, Clock, CheckCircle2, Loader2, AlertCircle, ChevronDown, BellRing, Bell } from "lucide-react";
 import { useState } from "react";
+import { formatTaskDate, getCategoryLabel } from "../App";
 import type { Task, TaskStatus } from "../App";
 
 interface TaskDetailModalProps {
@@ -7,7 +8,7 @@ interface TaskDetailModalProps {
   puedeModificarEstado?: boolean;
   puedeNotificar?: boolean;
   onClose: () => void;
-  onUpdateStatus?: (taskId: string, estado: TaskStatus) => void;
+  onUpdateStatus?: (taskId: string, estado: TaskStatus) => void | Promise<void>;
   onNotificar?: (taskId: string) => void;
 }
 
@@ -45,7 +46,7 @@ export function TaskDetailModal({ task, puedeModificarEstado = false, puedeNotif
           <div className="flex items-start justify-between gap-4 mb-5">
             <div className="flex-1 min-w-0">
               <p className="text-muted-foreground mb-1" style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>
-                {task.categoria}
+                {getCategoryLabel(task.categoria)}
               </p>
               <h2 className="text-foreground" style={{ fontWeight: 600, fontSize: "1.125rem", lineHeight: "1.4" }}>{task.titulo}</h2>
             </div>
@@ -69,7 +70,13 @@ export function TaskDetailModal({ task, puedeModificarEstado = false, puedeNotif
                       {(Object.keys(estadoConfig) as TaskStatus[]).map((s) => {
                         const c = estadoConfig[s];
                         return (
-                          <button key={s} onClick={() => { onUpdateStatus(task.id, s); setEstadoOpen(false); }}
+                          <button key={s} onClick={async () => {
+                            try {
+                              await onUpdateStatus(task.id, s);
+                              setEstadoOpen(false);
+                            } catch {
+                            }
+                          }}
                             className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-secondary transition-colors ${s === task.estado ? "bg-secondary" : ""}`}>
                             <span className={c.color.split(" ")[0]}>{c.icon}</span>
                             <span className="text-foreground">{c.label}</span>
@@ -107,14 +114,22 @@ export function TaskDetailModal({ task, puedeModificarEstado = false, puedeNotif
             </p>
           </div>
 
+          {task.comentario && (
+            <div className="mb-6">
+              <p className="text-muted-foreground mb-2" style={{ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Comentario</p>
+              <p className="text-foreground" style={{ fontSize: "0.875rem", lineHeight: "1.7" }}>
+                {task.comentario}
+              </p>
+            </div>
+          )}
+
           {/* Metadatos */}
           <div className="grid grid-cols-2 gap-3">
             {[
-              { icon: <MapPin className="w-4 h-4" />, label: "Ubicación", value: task.ubicacion },
               { icon: <User className="w-4 h-4" />, label: "Asignado a", value: task.asignadoANombre },
-              { icon: <Calendar className="w-4 h-4" />, label: "Fecha límite", value: task.fechaVencimiento },
-              { icon: <Clock className="w-4 h-4" />, label: "Creada el", value: task.creadoEn },
-              { icon: <Tag className="w-4 h-4" />, label: "Categoría", value: task.categoria },
+              { icon: <Calendar className="w-4 h-4" />, label: "Fecha límite", value: formatTaskDate(task.fechaVencimiento) },
+              { icon: <Clock className="w-4 h-4" />, label: "Creada el", value: formatTaskDate(task.creadoEn) },
+              { icon: <Tag className="w-4 h-4" />, label: "Categoría", value: getCategoryLabel(task.categoria) },
             ].map((item) => (
               <div key={item.label} className="bg-secondary/50 rounded-lg p-3 flex items-start gap-2.5">
                 <span className="text-muted-foreground mt-0.5 flex-shrink-0">{item.icon}</span>

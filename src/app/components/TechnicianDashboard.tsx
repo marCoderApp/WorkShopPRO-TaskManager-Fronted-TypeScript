@@ -1,10 +1,11 @@
 import { useState } from "react";
 import {
   Wrench, LogOut, Clock, CheckCircle2, AlertCircle, Loader2,
-  Calendar, MapPin, User, Filter, Sun, Moon
+  Calendar, User, Filter, Sun, Moon
 } from "lucide-react";
 import { TaskDetailModal } from "./TaskDetailModal";
 import { ConfirmModal } from "./ConfirmModal";
+import { formatTaskDate, getCategoryLabel } from "../App";
 import type { Task, TaskStatus, AppUser } from "../App";
 
 type Priority = "baja" | "media" | "alta" | "critica";
@@ -12,7 +13,7 @@ type Priority = "baja" | "media" | "alta" | "critica";
 interface TechnicianDashboardProps {
   currentUser: AppUser;
   tasks: Task[];
-  onUpdateStatus: (taskId: string, estado: TaskStatus) => void;
+  onUpdateStatus: (taskId: string, estado: TaskStatus) => void | Promise<void>;
   onLogout: () => void;
   darkMode: boolean;
   onToggleDark: () => void;
@@ -143,16 +144,13 @@ export function TechnicianDashboard({ currentUser, tasks, onUpdateStatus, onLogo
                       </div>
                       <div className="flex items-center gap-4 flex-wrap">
                         <span className="flex items-center gap-1 text-muted-foreground" style={{ fontSize: "0.75rem" }}>
-                          <MapPin className="w-3 h-3" />{task.ubicacion}
-                        </span>
-                        <span className="flex items-center gap-1 text-muted-foreground" style={{ fontSize: "0.75rem" }}>
-                          <Calendar className="w-3 h-3" />Vence {task.fechaVencimiento}
+                          <Calendar className="w-3 h-3" />Vence {formatTaskDate(task.fechaVencimiento)}
                         </span>
                         <span className="flex items-center gap-1.5" style={{ fontSize: "0.75rem" }}>
                           <span className={`w-2 h-2 rounded-full ${pc?.dot}`} />
                           <span className="text-muted-foreground">{pc?.label} prioridad</span>
                         </span>
-                        <span className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>{task.categoria}</span>
+                        <span className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>{getCategoryLabel(task.categoria)}</span>
                       </div>
                     </div>
                   </div>
@@ -168,8 +166,8 @@ export function TechnicianDashboard({ currentUser, tasks, onUpdateStatus, onLogo
           task={tareaSeleccionada}
           puedeModificarEstado={true}
           onClose={() => setTareaSeleccionada(null)}
-          onUpdateStatus={(id, estado) => {
-            onUpdateStatus(id, estado);
+          onUpdateStatus={async (id, estado) => {
+            await onUpdateStatus(id, estado);
             setTareaSeleccionada((t) => t ? { ...t, estado } : null);
           }}
         />

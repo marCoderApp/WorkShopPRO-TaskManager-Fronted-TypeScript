@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Login } from "./components/Login";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { TechnicianDashboard } from "./components/TechnicianDashboard";
+import api from "../api/axios";
 
 export type TaskStatus = "pendiente" | "en_progreso" | "completada" | "bloqueada";
 export type Priority = "baja" | "media" | "alta" | "critica";
@@ -10,6 +11,8 @@ export type UserRole = "superadmin" | "admin" | "tecnico";
 export interface AppUser {
   id: string;
   nombre: string;
+  apellido?: string;
+  dni?: string;
   rol: UserRole;
   email: string;
   password: string;
@@ -29,9 +32,183 @@ export interface Task {
   creadoEn: string;
   fechaVencimiento: string;
   categoria: string;
+  comentario?: string;
   notificada?: boolean;
   notificadaPor?: string;
   notificadaEn?: string;
+}
+
+interface TaskDTO {
+  id?: number | string;
+  task_id?: number | string;
+  titulo?: string;
+  title?: string;
+  descripcion?: string;
+  description?: string;
+  ubicacion?: string;
+  location?: string;
+  prioridad?: string;
+  priority?: string;
+  estado?: string;
+  status?: string;
+  asignadoAId?: number | string;
+  assignedToId?: number | string;
+  assignedTo?: number | string;
+  asignadoANombre?: string;
+  assignedToName?: string;
+  creadoEn?: string;
+  createdAt?: string;
+  fechaVencimiento?: string;
+  due_date?: string;
+  dueDate?: string;
+  categoria?: string;
+  category?: string;
+  comment?: string;
+}
+
+interface UserDTO {
+  id?: number | string;
+  user_id?: number | string;
+  name?: string;
+  nombre?: string;
+  lastname?: string;
+  apellido?: string;
+  email: string;
+  role?: string | { name?: string; authority?: string };
+  rol?: string;
+  userRole?: string;
+  enabled?: boolean;
+  activo?: boolean;
+}
+
+interface UsersResponse {
+  content?: UserDTO[];
+  users?: UserDTO[];
+  data?: UserDTO[];
+  items?: UserDTO[];
+}
+
+function mapUser(user: UserDTO): AppUser {
+  const name = [user.name ?? user.nombre, user.lastname ?? user.apellido]
+    .filter(Boolean)
+    .join(" ") || user.email;
+  const role = normalizeUserRole(user);
+  const appRole = role === "SUPER_ADMIN"
+    ? "superadmin"
+    : role === "ADMIN"
+      ? "admin"
+      : "tecnico";
+
+  return {
+    id: String(user.id ?? user.user_id),
+    nombre: name,
+    rol: appRole,
+    email: user.email,
+    password: "",
+    avatar: name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase(),
+    activo: user.enabled ?? user.activo ?? true,
+  };
+}
+
+function normalizeUserRole(user: UserDTO): string {
+  const role = typeof user.role === "object"
+    ? user.role.name ?? user.role.authority ?? ""
+    : user.role ?? user.rol ?? user.userRole ?? "";
+
+  return role
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/^ROLE_/, "");
+}
+
+function normalizeTaskValue(value: string | undefined, fallback: string): string {
+  return (value ?? fallback).toLowerCase().replace(/\s+/g, "_");
+}
+
+export function formatTaskDate(value: string): string {
+  if (!value) return "Sin fecha";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+export function getCategoryLabel(value: string): string {
+  return {
+    gas: "Gas",
+    electric: "Eléctrico",
+    wireless: "Inalámbrico",
+    inverter: "Inversor",
+    manual: "Manual",
+  }[normalizeTaskValue(value, "manual")] ?? value;
+}
+
+function mapTask(task: TaskDTO, assignedUserName?: string): Task {
+  const priority = normalizeTaskValue(task.prioridad ?? task.priority, "media");
+  const status = normalizeTaskValue(task.estado ?? task.status, "pendiente");
+  const priorityMap: Record<string, Priority> = {
+    low: "baja",
+    medium: "media",
+    high: "alta",
+    urgent: "critica",
+    critical: "critica",
+  };
+  const statusMap: Record<string, TaskStatus> = {
+    pending: "pendiente",
+    pendiente: "pendiente",
+    in_progress: "en_progreso",
+    en_progreso: "en_progreso",
+    completed: "completada",
+    completada: "completada",
+    blocked: "bloqueada",
+    cancelled: "bloqueada",
+    bloqueada: "bloqueada",
+  };
+
+  return {
+    id: String(task.id ?? task.task_id),
+    titulo: task.titulo ?? task.title ?? "Sin título",
+    descripcion: task.descripcion ?? task.description ?? "",
+    ubicacion: task.ubicacion ?? task.location ?? "Sin ubicación",
+    prioridad: priorityMap[priority] ?? "media",
+    estado: statusMap[status] ?? "pendiente",
+    asignadoAId: String(task.asignadoAId ?? task.assignedToId ?? task.assignedTo ?? ""),
+    asignadoANombre: task.asignadoANombre ?? task.assignedToName ?? assignedUserName ?? "Sin asignar",
+    creadoEn: task.creadoEn ?? task.createdAt ?? "",
+    fechaVencimiento: task.fechaVencimiento ?? task.due_date ?? task.dueDate ?? "",
+    categoria: task.categoria ?? task.category ?? "MANUAL",
+    comentario: task.comment ?? "",
+  };
+}
+
+function toBackendStatus(status: TaskStatus): string {
+  return {
+    pendiente: "PENDING",
+    en_progreso: "IN_PROGRESS",
+    completada: "COMPLETED",
+    bloqueada: "CANCELLED",
+  }[status];
+}
+
+function toBackendEnum(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/\s+/g, "_");
+}
+
+function toBackendPriority(priority: Priority): string {
+  return {
+    baja: "LOW",
+    media: "MEDIUM",
+    alta: "HIGH",
+    critica: "URGENT",
+  }[priority];
 }
 
 const INITIAL_USERS: AppUser[] = [
@@ -103,8 +280,8 @@ const INITIAL_TASKS: Task[] = [
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
-  const [users, setUsers] = useState<AppUser[]>(INITIAL_USERS);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [users, setUsers] = useState<AppUser[]>([]);
   const [darkMode, setDarkMode] = useState(true);
 
   useEffect(() => {
@@ -115,23 +292,121 @@ export default function App() {
     document.documentElement.classList.add("dark");
   }, []);
 
-  function handleLogin(user: AppUser) { setCurrentUser(user); }
-  function handleLogout() { setCurrentUser(null); }
+  useEffect(() => {
+    if (!currentUser) return;
+    const user = currentUser;
 
-  function handleCreateTask(task: Omit<Task, "id" | "creadoEn">) {
-    setTasks((prev) => [{
-      ...task,
-      id: `t-${Date.now()}`,
-      creadoEn: new Date().toISOString().split("T")[0],
-    }, ...prev]);
+    async function loadTasks() {
+      try {
+        const endpoint = user.rol === "tecnico"
+          ? "/techs/my_tasks"
+          : "/tasks";
+        const response = await api.get<TaskDTO[]>(endpoint);
+        setTasks(response.data.map((task) => {
+          const assignedToId = String(task.asignadoAId ?? task.assignedToId ?? task.assignedTo ?? "");
+          const assignedUser = users.find((item) => item.id === assignedToId)
+            ?? (user.id === assignedToId ? user : undefined);
+          return mapTask(task, assignedUser?.nombre);
+        }));
+      } catch (error) {
+        console.error("No se pudieron cargar las tareas", error);
+        setTasks([]);
+      }
+    }
+
+    void loadTasks();
+  }, [currentUser, users]);
+
+  useEffect(() => {
+    if (!currentUser || currentUser.rol === "tecnico") return;
+
+    async function loadTechnicians() {
+      try {
+        const response = await api.get<UserDTO[] | UsersResponse>("/admin/users");
+        const usersData = Array.isArray(response.data)
+          ? response.data
+          : response.data.content ?? response.data.users ?? response.data.data ?? response.data.items ?? [];
+        const allUsers = usersData
+          .filter((user) => user.id !== undefined || user.user_id !== undefined)
+          .map(mapUser);
+        setUsers(allUsers);
+      } catch (error) {
+        console.error("No se pudieron cargar los técnicos", error);
+        setUsers([]);
+      }
+    }
+
+    void loadTechnicians();
+  }, [currentUser]);
+
+  function handleLogin(user: AppUser) { setCurrentUser(user); }
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    setCurrentUser(null);
+  }
+
+  async function handleCreateTask(task: Omit<Task, "id" | "creadoEn">) {
+    if (!task.asignadoAId) {
+      window.alert("Selecciona un técnico antes de crear la tarea.");
+      return;
+    }
+
+    try {
+      const response = await api.post<TaskDTO>(`/tasks/create/${task.asignadoAId}`, {
+        title: task.titulo,
+        description: task.descripcion,
+        status: toBackendStatus(task.estado),
+        createdBy: currentUser?.id ?? "",
+        priority: toBackendPriority(task.prioridad),
+        due_date: `${task.fechaVencimiento}T23:59:59`,
+        category: toBackendEnum(task.categoria),
+        assignedTo: task.asignadoAId,
+        comment: task.comentario ?? "",
+      });
+
+      const assignedUser = users.find((user) => user.id === task.asignadoAId);
+      setTasks((prev) => [mapTask(response.data, assignedUser?.nombre), ...prev]);
+    } catch (error: any) {
+      const message = error.response?.data;
+      window.alert(typeof message === "string" ? message : "No se pudo crear la tarea.");
+    }
   }
 
   function handleDeleteTask(taskId: string) {
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
   }
 
-  function handleUpdateStatus(taskId: string, estado: TaskStatus) {
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, estado } : t)));
+  async function handleUpdateStatus(taskId: string, estado: TaskStatus) {
+    const numericTaskId = Number(taskId);
+    if (!Number.isInteger(numericTaskId) || numericTaskId <= 0) {
+      window.alert("La tarea no tiene un ID válido para actualizar su estado.");
+      return;
+    }
+
+    if (currentUser?.rol !== "tecnico") {
+      window.alert("Solo un usuario con rol técnico puede cambiar el estado.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      await api.patch(
+        "/techs/change_status",
+        { task_id: numericTaskId, status: toBackendStatus(estado) },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, estado } : t)));
+    } catch (error: any) {
+      const responseData = error.response?.data;
+      const message = typeof responseData === "string"
+        ? responseData
+        : responseData?.message ?? responseData?.mensaje ?? responseData?.error;
+      const errorMessage = message
+        ?? `No se pudo guardar el estado (HTTP ${error.response?.status ?? "sin respuesta"}).`;
+      window.alert(errorMessage);
+      throw new Error(errorMessage);
+    }
   }
 
   function handleNotificarTarea(taskId: string, adminNombre: string) {
@@ -147,8 +422,28 @@ export default function App() {
     );
   }
 
-  function handleCreateUser(user: Omit<AppUser, "id" | "activo">) {
-    setUsers((prev) => [...prev, { ...user, id: `u-${Date.now()}`, activo: true }]);
+  async function handleCreateUser(user: Omit<AppUser, "id" | "activo">) {
+    try {
+      await api.post("/users/register_user", {
+        name: user.nombre,
+        lastName: user.apellido ?? "",
+        dni: user.dni ?? "",
+        email: user.email,
+        password: user.password,
+        role: user.rol.toUpperCase() === "SUPERADMIN" ? "SUPER_ADMIN" : user.rol.toUpperCase(),
+      });
+
+      const response = await api.get<UserDTO[] | UsersResponse>("/admin/users");
+      const usersData = Array.isArray(response.data)
+        ? response.data
+        : response.data.content ?? response.data.users ?? response.data.data ?? response.data.items ?? [];
+      setUsers(usersData
+        .filter((item) => item.id !== undefined || item.user_id !== undefined)
+        .map(mapUser));
+    } catch (error: any) {
+      const message = error.response?.data;
+      window.alert(typeof message === "string" ? message : "No se pudo crear el usuario.");
+    }
   }
 
   function handleDeleteUser(userId: string) {
@@ -160,7 +455,7 @@ export default function App() {
   }));
 
   if (!currentUser) {
-    return <Login onLogin={handleLogin} users={users} darkMode={darkMode} onToggleDark={() => setDarkMode((d) => !d)} />;
+    return <Login onLogin={handleLogin} darkMode={darkMode} onToggleDark={() => setDarkMode((d) => !d)} />;
   }
 
   if (currentUser.rol === "tecnico") {

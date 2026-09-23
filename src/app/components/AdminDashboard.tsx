@@ -8,6 +8,7 @@ import {
 import { TaskDetailModal } from "./TaskDetailModal";
 import { ConfirmModal } from "./ConfirmModal";
 import type { Task, TaskStatus, AppUser } from "../App";
+import { formatTaskDate, getCategoryLabel } from "../App";
 
 type Priority = "baja" | "media" | "alta" | "critica";
 
@@ -47,7 +48,13 @@ const prioridadConfig: Record<Priority, { label: string; dot: string }> = {
   critica: { label: "Crítica", dot: "bg-red-500" },
 };
 
-const categorias = ["Eléctrico", "Plomería", "HVAC", "Estructural", "Redes", "Seguridad", "Mantenimiento", "Inspección"];
+const categorias = [
+  { value: "GAS", label: "Gas" },
+  { value: "ELECTRIC", label: "Eléctrico" },
+  { value: "WIRELESS", label: "Inalámbrico" },
+  { value: "INVERTER", label: "Inversor" },
+  { value: "MANUAL", label: "Manual" },
+];
 
 /* ─── Modal: Nueva Tarea ─── */
 function CrearTareaModal({ tecnicos, onClose, onSubmit }: {
@@ -55,15 +62,21 @@ function CrearTareaModal({ tecnicos, onClose, onSubmit }: {
   onClose: () => void;
   onSubmit: (task: Omit<Task, "id" | "creadoEn">) => void;
 }) {
+  const [formError, setFormError] = useState("");
   const [form, setForm] = useState({
-    titulo: "", descripcion: "", ubicacion: "",
+    titulo: "", descripcion: "", comentario: "",
     prioridad: "media" as Priority, estado: "pendiente" as TaskStatus,
     asignadoAId: tecnicos[0]?.id ?? "", asignadoANombre: tecnicos[0]?.nombre ?? "",
-    fechaVencimiento: "", categoria: "Mantenimiento",
+    fechaVencimiento: "", categoria: "MANUAL",
   });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.asignadoAId) {
+      setFormError("No hay un técnico seleccionado. Verifica que existan técnicos activos.");
+      return;
+    }
+    setFormError("");
     onSubmit(form);
     onClose();
   }
@@ -88,13 +101,13 @@ function CrearTareaModal({ tecnicos, onClose, onSubmit }: {
               placeholder="Instrucciones detalladas de la tarea..." rows={3}
               className="bg-input-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all resize-none" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-foreground" style={{ fontSize: "0.875rem" }}>Ubicación *</label>
-              <input required value={form.ubicacion} onChange={(e) => setForm((f) => ({ ...f, ubicacion: e.target.value }))}
-                placeholder="ej. Edificio A, Piso 3"
-                className="bg-input-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all" />
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-foreground" style={{ fontSize: "0.875rem" }}>Comentario</label>
+            <textarea value={form.comentario} onChange={(e) => setForm((f) => ({ ...f, comentario: e.target.value }))}
+              placeholder="Comentario adicional..." rows={2}
+              className="bg-input-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all resize-none" />
+          </div>
+          <div className="grid grid-cols-1 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-foreground" style={{ fontSize: "0.875rem" }}>Fecha límite *</label>
               <input required type="date" value={form.fechaVencimiento} onChange={(e) => setForm((f) => ({ ...f, fechaVencimiento: e.target.value }))}
@@ -113,7 +126,7 @@ function CrearTareaModal({ tecnicos, onClose, onSubmit }: {
               <label className="text-foreground" style={{ fontSize: "0.875rem" }}>Categoría</label>
               <select value={form.categoria} onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))}
                 className="bg-input-background border border-border rounded-lg px-3 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all">
-                {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
+                {categorias.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}
               </select>
             </div>
           </div>
@@ -121,13 +134,19 @@ function CrearTareaModal({ tecnicos, onClose, onSubmit }: {
             <label className="text-foreground" style={{ fontSize: "0.875rem" }}>Asignar a *</label>
             <select required value={form.asignadoAId}
               onChange={(e) => { const t = tecnicos.find((x) => x.id === e.target.value); setForm((f) => ({ ...f, asignadoAId: e.target.value, asignadoANombre: t?.nombre ?? "" })); }}
+              disabled={tecnicos.length === 0}
               className="bg-input-background border border-border rounded-lg px-3 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all">
-              {tecnicos.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+              {tecnicos.length === 0 ? (
+                <option value="">No hay técnicos disponibles</option>
+              ) : (
+                tecnicos.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)
+              )}
             </select>
           </div>
+          {formError && <p className="text-destructive text-sm">{formError}</p>}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 border border-border rounded-lg text-foreground hover:bg-secondary transition-colors">Cancelar</button>
-            <button type="submit" className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity" style={{ fontWeight: 600 }}>Crear Tarea</button>
+            <button type="submit" disabled={!tecnicos.length} className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed" style={{ fontWeight: 600 }}>Crear Tarea</button>
           </div>
         </form>
       </div>
@@ -142,14 +161,14 @@ function CrearUsuarioModal({ isSuperAdmin, onClose, onSubmit }: {
   onSubmit: (user: Omit<AppUser, "id" | "activo">) => void;
 }) {
   const [form, setForm] = useState({
-    nombre: "", email: "", password: "",
+    nombre: "", apellido: "", dni: "", email: "", password: "",
     rol: "tecnico" as AppUser["rol"], avatar: "",
   });
   const [showPassword, setShowPassword] = useState(false);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const initials = form.nombre.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+    const initials = `${form.nombre} ${form.apellido}`.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
     onSubmit({ ...form, avatar: initials });
     onClose();
   }
@@ -171,6 +190,20 @@ function CrearUsuarioModal({ isSuperAdmin, onClose, onSubmit }: {
             <input required value={form.nombre} onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
               placeholder="ej. Ana Torres"
               className="bg-input-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-foreground" style={{ fontSize: "0.875rem" }}>Apellido *</label>
+              <input required value={form.apellido} onChange={(e) => setForm((f) => ({ ...f, apellido: e.target.value }))}
+                placeholder="ej. Torres"
+                className="bg-input-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-foreground" style={{ fontSize: "0.875rem" }}>DNI *</label>
+              <input required value={form.dni} onChange={(e) => setForm((f) => ({ ...f, dni: e.target.value }))}
+                placeholder="Documento"
+                className="bg-input-background border border-border rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all" />
+            </div>
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-foreground" style={{ fontSize: "0.875rem" }}>Correo electrónico *</label>
@@ -371,8 +404,8 @@ export function AdminDashboard({
             </div>
 
             <div className="bg-card border border-border rounded-xl overflow-hidden">
-              <div className="grid border-b border-border px-5 py-3" style={{ gridTemplateColumns: "1fr auto auto auto auto auto auto" }}>
-                {["Tarea", "Ubicación", "Vencimiento", "Prioridad", "Técnico", "Notif.", "Estado"].map((h) => (
+              <div className="grid border-b border-border px-5 py-3" style={{ gridTemplateColumns: "1fr auto auto auto auto auto" }}>
+                {["Tarea", "Vencimiento", "Prioridad", "Técnico", "Notif.", "Estado"].map((h) => (
                   <p key={h} className="text-muted-foreground" style={{ fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</p>
                 ))}
               </div>
@@ -386,17 +419,14 @@ export function AdminDashboard({
                     return (
                       <div key={task.id}
                         className="grid gap-4 px-5 py-4 items-center hover:bg-secondary/30 transition-colors group cursor-pointer"
-                        style={{ gridTemplateColumns: "1fr auto auto auto auto auto auto" }}
+                        style={{ gridTemplateColumns: "1fr auto auto auto auto auto" }}
                         onClick={() => setTareaSeleccionada(task)}>
                         <div className="min-w-0">
                           <p className="text-foreground truncate" style={{ fontSize: "0.875rem", fontWeight: 500 }}>{task.titulo}</p>
-                          <p className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>{task.categoria}</p>
+                          <p className="text-muted-foreground" style={{ fontSize: "0.75rem" }}>{getCategoryLabel(task.categoria)}</p>
                         </div>
                         <span className="flex items-center gap-1 text-muted-foreground whitespace-nowrap" style={{ fontSize: "0.8125rem" }}>
-                          <MapPin className="w-3 h-3" />{task.ubicacion}
-                        </span>
-                        <span className="flex items-center gap-1 text-muted-foreground whitespace-nowrap" style={{ fontSize: "0.8125rem" }}>
-                          <Calendar className="w-3 h-3" />{task.fechaVencimiento}
+                          <Calendar className="w-3 h-3" />{formatTaskDate(task.fechaVencimiento)}
                         </span>
                         <span className="flex items-center gap-1.5 whitespace-nowrap" style={{ fontSize: "0.8125rem" }}>
                           <span className={`w-2 h-2 rounded-full ${pc?.dot}`} />
