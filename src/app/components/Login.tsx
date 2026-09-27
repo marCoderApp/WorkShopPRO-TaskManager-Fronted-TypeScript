@@ -55,6 +55,8 @@ export function Login({ onLogin, darkMode, onToggleDark }: LoginProps) {
     e.preventDefault();
     setError("");
     setLoading(true);
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
 
     try{
 
