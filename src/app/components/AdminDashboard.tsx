@@ -300,8 +300,8 @@ export function AdminDashboard({
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Encabezado */}
-      <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="bg-card border-b border-border px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
+        <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
           <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
             <Wrench className="w-4 h-4 text-primary-foreground" />
           </div>
@@ -319,7 +319,7 @@ export function AdminDashboard({
             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
               <Shield className="w-4 h-4 text-primary" />
             </div>
-            <span className="text-foreground" style={{ fontSize: "0.875rem", fontWeight: 500 }}>{currentUser.nombre}</span>
+            <span className="max-w-[34vw] truncate text-foreground sm:max-w-none" style={{ fontSize: "0.875rem", fontWeight: 500 }}>{currentUser.nombre}</span>
           </div>
           <button onClick={() => setConfirmarLogout(true)} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-secondary">
             <LogOut className="w-4 h-4" />
@@ -328,9 +328,9 @@ export function AdminDashboard({
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">
+      <main className="flex-1 max-w-6xl w-full min-w-0 mx-auto px-4 py-6 sm:px-6 sm:py-8">
         {/* Encabezado de página */}
-        <div className="flex items-start justify-between mb-8">
+        <div className="flex flex-col items-start justify-between gap-4 mb-8 sm:flex-row">
           <div>
             <h1 className="text-foreground mb-1" style={{ fontWeight: 600, fontSize: "1.5rem" }}>Panel de Administración</h1>
             <p className="text-muted-foreground" style={{ fontSize: "0.875rem" }}>Gestiona tareas y usuarios de la plataforma</p>
@@ -354,10 +354,10 @@ export function AdminDashboard({
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-8 border-b border-border">
+        <div className="flex min-w-0 gap-1 mb-8 overflow-x-auto border-b border-border">
           {tabs.map((tab) => (
             <button key={tab.key} onClick={() => setTabActivo(tab.key)}
-              className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-all -mb-px ${tabActivo === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              className={`flex shrink-0 items-center gap-2 px-3 py-3 border-b-2 transition-all -mb-px sm:px-4 ${tabActivo === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
               style={{ fontSize: "0.875rem", fontWeight: tabActivo === tab.key ? 600 : 400 }}>
               {tab.icon}{tab.label}
             </button>
@@ -367,7 +367,7 @@ export function AdminDashboard({
         {/* ── Tab: Tareas ── */}
         {tabActivo === "tareas" && (
           <>
-            <div className="grid grid-cols-5 gap-3 mb-6">
+            <div className="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-5">
               {[
                 { label: "Total", value: stats.total, color: "text-foreground" },
                 { label: "Pendientes", value: stats.pendiente, color: "text-amber-500" },

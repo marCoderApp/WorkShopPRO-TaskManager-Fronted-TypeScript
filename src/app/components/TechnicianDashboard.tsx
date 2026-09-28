@@ -51,8 +51,8 @@ export function TechnicianDashboard({ currentUser, tasks, onUpdateStatus, onLogo
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="bg-card border-b border-border px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
+        <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-start">
           <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
             <Wrench className="w-4 h-4 text-primary-foreground" />
           </div>
@@ -68,7 +68,7 @@ export function TechnicianDashboard({ currentUser, tasks, onUpdateStatus, onLogo
             <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
               <User className="w-4 h-4 text-blue-500" />
             </div>
-            <span className="text-foreground" style={{ fontSize: "0.875rem", fontWeight: 500 }}>{currentUser.nombre}</span>
+            <span className="max-w-[34vw] truncate text-foreground sm:max-w-none" style={{ fontSize: "0.875rem", fontWeight: 500 }}>{currentUser.nombre}</span>
           </div>
           <button onClick={() => setConfirmarLogout(true)} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-secondary">
             <LogOut className="w-4 h-4" />
@@ -77,7 +77,7 @@ export function TechnicianDashboard({ currentUser, tasks, onUpdateStatus, onLogo
         </div>
       </header>
 
-      <main className="flex-1 max-w-4xl w-full mx-auto px-6 py-8">
+      <main className="flex-1 max-w-4xl w-full min-w-0 mx-auto px-4 py-6 sm:px-6 sm:py-8">
         <div className="mb-8">
           <h1 className="text-foreground mb-1" style={{ fontWeight: 600, fontSize: "1.5rem" }}>Mis Tareas</h1>
           <p className="text-muted-foreground" style={{ fontSize: "0.875rem" }}>
@@ -85,7 +85,7 @@ export function TechnicianDashboard({ currentUser, tasks, onUpdateStatus, onLogo
           </p>
         </div>
 
-        <div className="grid grid-cols-4 gap-3 mb-8">
+        <div className="grid grid-cols-2 gap-3 mb-8 sm:grid-cols-4">
           {[
             { label: "Total", value: conteos.todas, color: "text-foreground" },
             { label: "Pendientes", value: conteos.pendiente, color: "text-amber-500" },
