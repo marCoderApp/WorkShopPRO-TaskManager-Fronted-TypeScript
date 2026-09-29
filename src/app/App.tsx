@@ -221,7 +221,7 @@ const INITIAL_USERS: AppUser[] = [
 
 const INITIAL_TASKS: Task[] = [
   {
-    id: "t1", titulo: "Reemplazar filtro HVAC — Unidad B3",
+    id: "t1", titulo: "Reemplazar filtro HVAC — Unidad B",
     descripcion: "La unidad HVAC del 3er piso del Edificio B requiere el reemplazo trimestral del filtro. Usar filtros MERV-13 del almacén estante 4. Inspeccionar el motor del ventilador y reportar cualquier ruido inusual.",
     ubicacion: "Edificio B, Piso 3", prioridad: "alta", estado: "pendiente",
     asignadoAId: "tech-1", asignadoANombre: "James Okafor",
